@@ -1,130 +1,65 @@
-# Deepfake Detection using EfficientNet
+# DualForensics: Deepfake Detection with Explainability
 
-## Project Overview
+Dual-branch spatiotemporal attention network for deepfake detection using the FaceForensics++ dataset. Combines spatial artifact analysis (CNN + CBAM) with temporal inconsistency detection (Transformer encoder) through cross-attention fusion. Includes Grad-CAM explainability.
 
-This project focuses on detecting deepfake videos using deep learning. The system processes video frames, extracts faces, and uses a convolutional neural network to classify whether the input is **real or fake**.
-The backbone model used for feature extraction is **EfficientNet**, which is known for high accuracy and computational efficiency.
+## Project Structure
 
----
+```
+project/
+├── configs/
+│   └── settings.py           # All hyperparameters and paths
+├── src/
+│   ├── data/                  # [Member 1] Data pipeline
+│   │   ├── video_processor.py #   Frame extraction, sampling
+│   │   ├── face_detector.py   #   MTCNN + Haar cascade
+│   │   ├── preprocessing.py   #   Discovery, extraction, splitting
+│   │   └── dataset.py         #   PyTorch Dataset + DataLoaders
+│   ├── models/                # [Member 2] Architecture
+│   │   ├── backbone.py        #   EfficientNet-B0
+│   │   ├── attention.py       #   CBAM (channel + spatial)
+│   │   ├── temporal.py        #   Transformer encoder
+│   │   ├── fusion.py          #   Cross-attention fusion
+│   │   └── dualforensics.py   #   Full model + baselines
+│   ├── training/              # [Member 3] Training
+│   │   ├── trainer.py         #   Training loop, evaluation
+│   │   └── metrics.py         #   Accuracy, F1, AUC, etc.
+│   └── explainability/        # [Member 3] XAI
+│       ├── gradcam.py         #   Grad-CAM implementation
+│       └── visualize.py       #   Dashboards, text explanations
+├── outputs/
+│   ├── plots/                 #   All saved figures
+│   ├── models/                #   Checkpoints
+│   └── logs/                  #   Training history, results
+├── main.py                    #   Entry point
+└── requirements.txt
+```
 
-# EfficientNet Architecture
+## Team Contributions
 
-EfficientNet is a convolutional neural network architecture designed to achieve high accuracy while using fewer parameters and less computation. It was introduced by researchers at Google and uses a technique called **compound scaling** to balance network depth, width, and input resolution.
+| Member | Responsibility | Files |
+|--------|---------------|-------|
+| Member 1 | Data pipeline, face detection, dataset class | `src/data/*` |
+| Member 2 | Model architecture, attention, transformer | `src/models/*` |
+| Member 3 | Training, evaluation, explainability | `src/training/*`, `src/explainability/*` |
 
-## Key Components of EfficientNet
+## Quick Start
 
-### 1. MBConv Blocks
+```bash
+pip install -r requirements.txt
 
-EfficientNet is built using **Mobile Inverted Bottleneck Convolution (MBConv)** blocks.
-Each MBConv block contains the following steps:
+# Full pipeline
+python main.py --model dualforensics --epochs 15
 
-1. **Expansion Layer (1×1 Convolution)**
-   Expands the number of channels to increase feature representation.
+# Baselines
+python main.py --model cnn_only --epochs 10
+python main.py --model cnn_lstm --epochs 10
 
-2. **Depthwise Convolution**
-   Applies convolution separately to each channel to reduce computational cost.
+# Skip training, just evaluate + explain
+python main.py --model dualforensics --skip-train --explain 10
+```
 
-3. **Squeeze-and-Excitation (SE) Block**
-   Reweights channels so the network focuses on important features.
+## Dataset
 
-4. **Projection Layer (1×1 Convolution)**
-   Reduces the number of channels back to the required size.
+FaceForensics++ (c23): https://www.kaggle.com/datasets/xdxd003/ff-c23
 
-5. **Skip Connection**
-   Helps preserve information and improves gradient flow during training.
-
----
-
-### EfficientNet-B0 Layer Structure
-
-| Stage | Operator                            | Resolution | Channels | Layers |
-| ----- | ----------------------------------- | ---------- | -------- | ------ |
-| 1     | Conv3×3                             | 224×224    | 32       | 1      |
-| 2     | MBConv1, k3×3                       | 112×112    | 16       | 1      |
-| 3     | MBConv6, k3×3                       | 112×112    | 24       | 2      |
-| 4     | MBConv6, k5×5                       | 56×56      | 40       | 2      |
-| 5     | MBConv6, k3×3                       | 28×28      | 80       | 3      |
-| 6     | MBConv6, k5×5                       | 14×14      | 112      | 3      |
-| 7     | MBConv6, k5×5                       | 14×14      | 192      | 4      |
-| 8     | MBConv6, k3×3                       | 7×7        | 320      | 1      |
-| 9     | Conv1×1 + Pooling + Fully Connected | 7×7        | 1280     | 1      |
-
-As the network goes deeper:
-
-* Spatial resolution decreases
-* Number of channels increases
-* Features become more abstract
-
----
-
-# Why EfficientNet is Used for Deepfake Detection
-
-Deepfake detection requires identifying **very subtle visual artifacts** in manipulated faces. EfficientNet is well suited for this task for several reasons.
-
-## 1. Strong Feature Extraction
-
-EfficientNet can capture fine details such as:
-
-* skin texture inconsistencies
-* blending artifacts around face boundaries
-* unnatural lighting patterns
-
-These details are important for detecting deepfake manipulations.
-
----
-
-## 2. Efficient Architecture
-
-EfficientNet achieves high performance with fewer parameters compared to traditional CNN models like ResNet or VGG.
-This makes training faster and reduces computational cost.
-
----
-
-## 3. Compound Scaling
-
-EfficientNet scales the model by balancing:
-
-* network depth
-* network width
-* input resolution
-
-This allows the network to learn richer representations while maintaining efficiency.
-
----
-
-## 4. High Accuracy for Image Classification
-
-EfficientNet has achieved state-of-the-art performance on image classification benchmarks such as ImageNet.
-Because deepfake detection is also an image classification task, EfficientNet provides strong performance.
-
----
-
-## 5. Good for High-Resolution Face Features
-
-Deepfake artifacts are often very small. EfficientNet processes high-resolution images effectively, allowing the model to capture these subtle manipulations.
-
----
-
-# Deepfake Detection Pipeline
-
-The full detection pipeline used in this project is:
-
-1. Video input
-2. Frame extraction
-3. Face detection (MTCNN)
-4. Face cropping and resizing (224×224)
-5. Feature extraction using EfficientNet
-6. Classification layer (Real vs Fake)
-
----
-
-# Future Improvements
-
-Possible improvements to the system include:
-
-* Temporal modeling using Transformers or LSTM
-* Attention mechanisms to focus on manipulated regions
-* Explainable AI techniques such as Grad-CAM
-* Multi-frame deepfake detection models
-
----
+~7000 videos: 1000 real + 6000 fake across 6 manipulation types.
