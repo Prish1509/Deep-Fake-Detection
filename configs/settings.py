@@ -7,7 +7,7 @@ import os
 import torch
 
 # -- Paths --
-DATASET_ROOT = "/kaggle/input/faceforensics-dataset-c23/FaceForensics++_C23"
+DATASET_ROOT = "/kaggle/input/datasets/xdxd003/ff-c23/FaceForensics++_C23"
 FACES_DIR = "./data/faces"
 CHECKPOINT_DIR = "./outputs/models"
 PLOTS_DIR = "./outputs/plots"
