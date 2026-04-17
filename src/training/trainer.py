@@ -146,7 +146,7 @@ class Trainer:
     def load_best(self):
         path = os.path.join(CHECKPOINT_DIR, f"{self.name}_best.pth")
         if os.path.exists(path):
-            ckpt = torch.load(path, map_location=DEVICE)
+            ckpt = torch.load(path, map_location=DEVICE, weights_only=False)
             self.model.load_state_dict(ckpt["model_state_dict"])
             print(f"Loaded best model from epoch {ckpt['epoch']}")
 
