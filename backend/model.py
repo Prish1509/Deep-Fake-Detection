@@ -66,7 +66,7 @@ class PosEnc(nn.Module):
 class TemporalTransformer(nn.Module):
     def __init__(self, d):
         super().__init__()
-        self.pe = PosEnc(d, dropout=T_DROPOUT)
+        self.pe = PosEnc(d, drop=T_DROPOUT)
         layer = nn.TransformerEncoderLayer(d, T_HEADS, T_FF, T_DROPOUT,
                                            batch_first=True, activation="gelu")
         self.enc = nn.TransformerEncoder(layer, T_LAYERS)
