@@ -24,6 +24,12 @@ FRONTEND_ORIGINS = os.environ.get(
     "http://localhost:3000,http://127.0.0.1:3000",
 ).split(",")
 
+print(f"[startup] MODEL_PATH env: {os.environ.get('MODEL_PATH')}")
+print(f"[startup] Resolved weights path: {WEIGHTS_PATH}")
+print(f"[startup] Weights exists: {WEIGHTS_PATH.is_file()}")
+if WEIGHTS_PATH.exists():
+    print(f"[startup] Weights size bytes: {WEIGHTS_PATH.stat().st_size}")
+
 device = torch.device("cpu")
 model = None
 gradcam: GradCAM | None = None
@@ -61,7 +67,13 @@ def _require_model():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "model_loaded": model is not None and gradcam is not None}
+    return {
+        "status": "ok",
+        "model_loaded": model is not None and gradcam is not None,
+        "model_path": str(WEIGHTS_PATH),
+        "model_exists": WEIGHTS_PATH.is_file(),
+        "model_error": model_load_error,
+    }
 
 
 @app.get("/api/demo")
